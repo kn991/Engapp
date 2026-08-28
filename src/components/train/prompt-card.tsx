@@ -53,7 +53,7 @@ export function PromptCard({
 
       {item.promptSecondary && (
         <p
-          lang={item.exerciseType === 'word_family' ? 'en' : item.promptLang === 'ru' ? 'en' : 'ru'}
+          lang={item.promptSecondaryLang}
           className="mx-auto mt-4 max-w-[32ch] text-[0.9375rem] leading-relaxed text-[var(--muted)]"
         >
           {item.promptSecondary}

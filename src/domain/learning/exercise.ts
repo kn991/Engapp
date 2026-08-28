@@ -100,6 +100,7 @@ export function buildSessionItem(input: BuildItemInput): SessionItem {
         prompt: word.contextHint,
         promptSecondary: firstCloze(word),
         promptLang: 'en',
+        promptSecondaryLang: 'en',
       }
     }
     case 'definition_recall': {
@@ -110,6 +111,7 @@ export function buildSessionItem(input: BuildItemInput): SessionItem {
         prompt: word.definition,
         promptSecondary: null,
         promptLang: 'en',
+        promptSecondaryLang: 'en',
       }
     }
     case 'cloze': {
@@ -121,6 +123,7 @@ export function buildSessionItem(input: BuildItemInput): SessionItem {
         prompt: cloze,
         promptSecondary: null,
         promptLang: 'en',
+        promptSecondaryLang: 'en',
         reveal: firstSentence(word),
       }
     }
@@ -135,6 +138,7 @@ export function buildSessionItem(input: BuildItemInput): SessionItem {
         prompt: picked.pattern,
         promptSecondary: picked.meaningRu,
         promptLang: 'en',
+        promptSecondaryLang: 'ru',
         answer,
         acceptedAnswers: [answer],
         reveal: picked.collocation,
@@ -149,6 +153,7 @@ export function buildSessionItem(input: BuildItemInput): SessionItem {
         prompt: picked.gloss ?? `${word.lemma} → ${picked.partOfSpeech}`,
         promptSecondary: `from “${word.lemma}” · ${picked.partOfSpeech.replace('_', ' ')}`,
         promptLang: picked.gloss ? 'ru' : 'en',
+        promptSecondaryLang: 'en',
         answer: picked.form,
         acceptedAnswers: [picked.form],
         reveal: null,
@@ -165,6 +170,7 @@ export function buildSessionItem(input: BuildItemInput): SessionItem {
     prompt: word.russian,
     promptSecondary: firstCloze(word) ?? word.contextHint,
     promptLang: 'ru',
+    promptSecondaryLang: 'en',
   }
 }
 

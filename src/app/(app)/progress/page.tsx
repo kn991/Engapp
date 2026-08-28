@@ -62,7 +62,16 @@ export default async function ProgressPage() {
         <section className="grid grid-cols-3 gap-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] px-4 py-4">
           <Stat label="Accuracy" value={data.accuracy != null ? `${data.accuracy}%` : '—'} />
           <Stat label="Without hints" value={data.noHintRate != null ? `${data.noHintRate}%` : '—'} />
-          <Stat label="Streak" value={data.streak} tone="accent" />
+          <Stat
+            label="Streak"
+            value={data.streak}
+            hint={
+              data.streakFreezes > 0
+                ? `${data.streakFreezes} ${data.streakFreezes === 1 ? 'freeze' : 'freezes'} banked`
+                : undefined
+            }
+            tone="accent"
+          />
         </section>
 
         <section>

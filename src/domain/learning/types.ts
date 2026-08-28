@@ -114,6 +114,8 @@ export interface SessionItem {
   prompt: string
   /** Secondary line under the prompt (disambiguating sentence / definition). */
   promptSecondary: string | null
+  /** Language of the secondary line, so screen readers and speech get it right. */
+  promptSecondaryLang: 'ru' | 'en'
   /** Language of the primary prompt, for `lang` attributes and speech. */
   promptLang: 'ru' | 'en'
   /** What the learner has to type. */

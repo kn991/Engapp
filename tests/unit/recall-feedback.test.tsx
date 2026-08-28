@@ -27,6 +27,7 @@ const item: SessionItem = {
   exerciseType: 'translation_recall',
   prompt: 'избегать',
   promptSecondary: null,
+  promptSecondaryLang: 'en',
   promptLang: 'ru',
   answer: 'avoid',
   acceptedAnswers: [],

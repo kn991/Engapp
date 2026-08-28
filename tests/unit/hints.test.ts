@@ -25,6 +25,7 @@ const item: SessionItem = {
   exerciseType: 'translation_recall',
   prompt: 'колебаться',
   promptSecondary: null,
+  promptSecondaryLang: 'en',
   promptLang: 'ru',
   answer: 'hesitate',
   acceptedAnswers: [],

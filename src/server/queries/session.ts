@@ -175,6 +175,7 @@ export async function loadDiagnosticQueue(
       item.word.examples.find((example) => example.clozeSentence)?.clozeSentence ??
       item.word.contextHint,
     promptLang: 'ru' as const,
+    promptSecondaryLang: 'en' as const,
     answer: item.word.primaryAnswer,
     acceptedAnswers: item.word.acceptedAnswers,
   }))

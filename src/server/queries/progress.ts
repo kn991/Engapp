@@ -35,6 +35,8 @@ export interface WeeklyReport {
 export interface ProgressData {
   overview: WordOverview
   streak: number
+  /** Banked days that cover a single miss without ending the streak. */
+  streakFreezes: number
   level: ReturnType<typeof levelFromXp>
   days: DayCell[]
   weekMinutes: number[]
@@ -144,6 +146,7 @@ export async function loadProgressData(userId: string): Promise<ProgressData | n
       },
       today
     ),
+    streakFreezes: bundle.progress.streak_freezes,
     level: levelFromXp(bundle.progress.xp),
     days,
     weekMinutes,

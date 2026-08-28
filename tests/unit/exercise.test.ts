@@ -135,3 +135,27 @@ describe('buildSessionItem', () => {
     expect(item.prompt).toBe('решать')
   })
 })
+
+describe('prompt languages', () => {
+  const common = {
+    word: full,
+    state: state(),
+    source: 'due' as const,
+    id: 'i2',
+    random: createRandom(5),
+  }
+
+  it('marks the cue and the supporting line with the right language', () => {
+    const translation = buildSessionItem({ ...common, exerciseType: 'translation_recall' })
+    expect(translation.promptLang).toBe('ru')
+    expect(translation.promptSecondaryLang).toBe('en')
+
+    const context = buildSessionItem({ ...common, exerciseType: 'context_recall' })
+    expect(context.promptLang).toBe('en')
+    expect(context.promptSecondaryLang).toBe('en')
+
+    const collocation = buildSessionItem({ ...common, exerciseType: 'collocation' })
+    expect(collocation.promptLang).toBe('en')
+    expect(collocation.promptSecondaryLang).toBe('ru')
+  })
+})
