@@ -23,9 +23,10 @@ test.describe('landing page', () => {
 
   test('runs the recall demo without an account and reports a real time', async ({ page }) => {
     await page.goto('/')
+    const demo = page.locator('#demo')
 
-    await page.getByRole('button', { name: 'Try it' }).click()
-    await expect(page.getByText('избегать')).toBeVisible()
+    await demo.getByRole('button', { name: 'Try it' }).click()
+    await expect(demo.getByText('избегать')).toBeVisible()
 
     await page.getByLabel('Your answer in English').fill('avoid')
     await page.getByRole('button', { name: 'Check' }).click()

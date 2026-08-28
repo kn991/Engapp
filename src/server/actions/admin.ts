@@ -172,9 +172,11 @@ export async function commitCuratedImport(
   if (rows.length === 0) return ok({ imported: 0, skipped: check.data.preview.rows.length })
 
   try {
+    // Duplicates were already filtered out during validation, so a plain
+    // insert is enough and the reported counts stay exact.
     const { data: inserted, error } = await supabase
       .from('words')
-      .upsert(
+      .insert(
         rows.map((row) => ({
           lemma: row.lemma,
           part_of_speech: row.part_of_speech,
@@ -186,8 +188,7 @@ export async function commitCuratedImport(
           accepted_answers: splitList(row.accepted_answers),
           tags: splitList(row.tags),
           created_by: null,
-        })),
-        { onConflict: 'lemma,part_of_speech', ignoreDuplicates: true }
+        }))
       )
       .select('id, lemma, part_of_speech')
 

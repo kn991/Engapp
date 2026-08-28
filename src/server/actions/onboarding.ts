@@ -1,6 +1,7 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 import {
   INITIAL_SET_SIZE,
   isValidTimeZone,
@@ -75,7 +76,7 @@ export async function savePreferences(input: unknown): Promise<ActionResult<unde
  */
 export async function completeOnboarding(
   input: unknown
-): Promise<ActionResult<{ wordCount: number }>> {
+): Promise<ActionResult<never>> {
   const parsed = diagnosticResultSchema.safeParse(input)
   if (!parsed.success) return fail('We could not save your result.')
 
@@ -139,11 +140,15 @@ export async function completeOnboarding(
     if (profileError) throw profileError
 
     revalidatePath('/home')
-    return ok({ wordCount: seeded.size })
   } catch (error) {
     logError('completeOnboarding', error, { userId: user.id })
     return fail(GENERIC_ERROR)
   }
+
+  // Redirecting from inside the action moves the learner straight to their
+  // result. It also avoids re-rendering /onboarding, which would now bounce
+  // them to the home screen because setup is finished.
+  redirect('/onboarding/result')
 }
 
 /** Levels worth training for someone at this productive level. */

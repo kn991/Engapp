@@ -72,7 +72,9 @@ export default async function WordsPage({
             description={search ? 'Try a different word or clear the search.' : empty.description}
           />
         ) : (
-          <ul className="mt-4 divide-y divide-[var(--border)] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]">
+          <ul
+            aria-label="Your words"
+            className="mt-4 divide-y divide-[var(--border)] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]">
             {entries.map((entry) => (
               <WordRow key={entry.word.id} word={entry.word} state={entry.state} />
             ))}

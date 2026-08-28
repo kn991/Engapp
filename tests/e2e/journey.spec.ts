@@ -32,7 +32,9 @@ test.describe('learner journey', () => {
     await completeOnboarding(page)
 
     await expect(page.getByText('Your baseline')).toBeVisible()
-    await expect(page.getByText(/Active recall: (A2|B1|B2|C1)/)).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: /Active recall: (A2|B1|B2|C1)/ })
+    ).toBeVisible()
   })
 
   test('home shows real starting numbers, not placeholders', async ({ page }) => {
@@ -40,7 +42,8 @@ test.describe('learner journey', () => {
     await page.goto('/home')
 
     await expect(page.getByRole('link', { name: 'Start daily session' })).toBeVisible()
-    await expect(page.getByText('Reviews')).toBeVisible()
+    await expect(page.getByText('Reviews', { exact: true })).toBeVisible()
+    await expect(page.getByText('Fast recalls', { exact: true })).toBeVisible()
   })
 
   test('runs a session: correct, incorrect, and a saved summary', async ({ page }) => {
@@ -88,25 +91,32 @@ test.describe('learner journey', () => {
     await signIn(page, account)
     await page.goto('/progress')
 
-    await expect(page.getByText('Average recall time')).toBeVisible()
-    const before = await page.getByText('Accuracy').textContent()
+    const heading = page.getByText('Average recall time', { exact: true })
+    await expect(heading).toBeVisible()
+
+    const accuracy = page.getByText('Accuracy', { exact: true }).locator('..')
+    const before = await accuracy.innerText()
+    expect(before).toMatch(/\d/)
 
     await page.reload()
-    await expect(page.getByText('Average recall time')).toBeVisible()
-    expect(await page.getByText('Accuracy').textContent()).toBe(before)
+    await expect(heading).toBeVisible()
+    expect(await accuracy.innerText()).toBe(before)
   })
 
   test('progress survives signing out and back in', async ({ page }) => {
     await signIn(page, account)
     await page.goto('/words')
-    const wordCount = await page.getByRole('listitem').count()
+    const list = page.getByRole('list', { name: 'Your words' })
+    await expect(list).toBeVisible()
+    const wordCount = await list.getByRole('listitem').count()
     expect(wordCount).toBeGreaterThan(0)
 
     await signOut(page)
     await signIn(page, account)
 
     await page.goto('/words')
-    expect(await page.getByRole('listitem').count()).toBe(wordCount)
+    await expect(list).toBeVisible()
+    expect(await list.getByRole('listitem').count()).toBe(wordCount)
   })
 
   test('a word can be added and then trained', async ({ page }) => {

@@ -93,7 +93,9 @@ security definer
 set search_path = ''
 as $$
 begin
-  if auth.role() = 'service_role' then
+  -- No JWT means a trusted context: migrations, the SQL editor, or a
+  -- service-role connection. Client requests always carry a subject.
+  if auth.uid() is null or auth.role() = 'service_role' then
     return new;
   end if;
 

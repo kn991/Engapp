@@ -12,6 +12,14 @@ type Context = Record<string, string | number | boolean | null | undefined>
 function serialiseError(error: unknown): string {
   if (error instanceof Error) return `${error.name}: ${error.message}`
   if (typeof error === 'string') return error
+  // Supabase returns plain objects rather than Error instances.
+  if (error && typeof error === 'object') {
+    const candidate = error as { message?: unknown; code?: unknown; details?: unknown }
+    const parts = [candidate.code, candidate.message, candidate.details]
+      .filter((part): part is string | number => typeof part === 'string' || typeof part === 'number')
+      .map(String)
+    if (parts.length > 0) return parts.join(': ')
+  }
   return 'unknown error'
 }
 

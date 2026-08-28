@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Field, Input } from '@/components/ui/input'
@@ -16,7 +15,6 @@ import { completeOnboarding, loadDiagnostic, savePreferences } from '@/server/ac
 import { ChoiceList } from './choice-list'
 import { DiagnosticQuiz, type DiagnosticAnswer } from './diagnostic-quiz'
 import { StepShell } from './step-shell'
-import { DiagnosticResult } from './diagnostic-result'
 
 const TOTAL_STEPS = 5
 
@@ -43,10 +41,9 @@ const CONTEXT_CHOICES = [
   { value: 'writing', label: 'Writing' },
 ]
 
-type Stage = 'questions' | 'loading-test' | 'test' | 'result' | 'saving'
+type Stage = 'questions' | 'loading-test' | 'test' | 'saving'
 
 export function OnboardingFlow({ displayName }: { displayName: string | null }) {
-  const router = useRouter()
   const [stage, setStage] = useState<Stage>('questions')
   const [step, setStep] = useState(1)
   const [error, setError] = useState<string | null>(null)
@@ -58,8 +55,6 @@ export function OnboardingFlow({ displayName }: { displayName: string | null }) 
   const [goal, setGoal] = useState<number>(10)
 
   const [items, setItems] = useState<SessionItem[]>([])
-  const [answers, setAnswers] = useState<DiagnosticAnswer[]>([])
-  const [wordCount, setWordCount] = useState(0)
 
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 
@@ -92,7 +87,6 @@ export function OnboardingFlow({ displayName }: { displayName: string | null }) 
   }
 
   async function finishTest(given: DiagnosticAnswer[]) {
-    setAnswers(given)
     setStage('saving')
 
     const summary = summariseDiagnostic(given)
@@ -113,13 +107,13 @@ export function OnboardingFlow({ displayName }: { displayName: string | null }) 
       timeZone,
     })
 
+    // On success the action redirects to the result page, so reaching this
+    // line at all means something went wrong.
     if (!result.ok) {
       setError(result.error)
-      setStage('result')
-      return
+      setStage('questions')
+      setStep(4)
     }
-    setWordCount(result.data.wordCount)
-    setStage('result')
   }
 
   if (stage === 'loading-test' || stage === 'saving') {
@@ -136,20 +130,6 @@ export function OnboardingFlow({ displayName }: { displayName: string | null }) 
 
   if (stage === 'test') {
     return <DiagnosticQuiz items={items} onComplete={finishTest} />
-  }
-
-  if (stage === 'result') {
-    return (
-      <DiagnosticResult
-        summary={summariseDiagnostic(answers)}
-        wordCount={wordCount}
-        error={error}
-        onStart={() => {
-          router.push('/train')
-          router.refresh()
-        }}
-      />
-    )
   }
 
   const footer = (

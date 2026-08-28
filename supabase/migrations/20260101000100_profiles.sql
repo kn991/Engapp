@@ -78,7 +78,10 @@ security definer
 set search_path = ''
 as $$
 begin
-  if auth.role() is distinct from 'service_role' then
+  -- Admin status is never client-settable. A request without a JWT subject is
+  -- a trusted context (migrations, the SQL editor, the service role), which is
+  -- how an administrator is appointed.
+  if auth.uid() is not null and auth.role() is distinct from 'service_role' then
     new.is_admin := old.is_admin;
     new.id := old.id;
   end if;

@@ -1,8 +1,15 @@
-'use client'
-
-import { Button } from '@/components/ui/button'
-import { formatLatency, type DiagnosticSummary } from '@/domain/learning'
+import { LinkButton } from '@/components/ui/link-button'
+import { formatLatency } from '@/domain/learning'
 import { cn } from '@/lib/utils'
+
+export interface DiagnosticResultProps {
+  estimatedLevel: string
+  fastShare: number
+  slowShare: number
+  missedShare: number
+  avgLatencyMs: number | null
+  wordCount: number
+}
 
 /**
  * The result deliberately separates what the learner knows from what they can
@@ -10,20 +17,17 @@ import { cn } from '@/lib/utils'
  * interesting number is how much of it comes back in time.
  */
 export function DiagnosticResult({
-  summary,
+  estimatedLevel,
+  fastShare,
+  slowShare,
+  missedShare,
+  avgLatencyMs,
   wordCount,
-  error,
-  onStart,
-}: {
-  summary: DiagnosticSummary
-  wordCount: number
-  error: string | null
-  onStart: () => void
-}) {
+}: DiagnosticResultProps) {
   const rows = [
-    { label: 'Fast recall', value: summary.fastShare, tone: 'bg-[var(--success)]' },
-    { label: 'Slow recall', value: summary.slowShare, tone: 'bg-[var(--warning)]' },
-    { label: 'Not retrieved', value: summary.missedShare, tone: 'bg-[var(--danger)]' },
+    { label: 'Fast recall', value: fastShare, tone: 'bg-[var(--success)]' },
+    { label: 'Slow recall', value: slowShare, tone: 'bg-[var(--warning)]' },
+    { label: 'Not retrieved', value: missedShare, tone: 'bg-[var(--danger)]' },
   ]
 
   return (
@@ -32,7 +36,7 @@ export function DiagnosticResult({
         Your baseline
       </p>
       <h1 className="font-display mt-2 text-[1.75rem] leading-tight">
-        Active recall: {summary.estimatedLevel}
+        Active recall: {estimatedLevel}
       </h1>
       <p className="mt-2 text-[0.9375rem] text-[var(--muted)]">
         You already know many of these words. We train the speed at which they come back.
@@ -56,7 +60,7 @@ export function DiagnosticResult({
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-[var(--muted)]">Average time to recall</span>
           <span className="tabular text-[1.25rem] font-semibold">
-            {formatLatency(summary.avgLatencyMs)}
+            {formatLatency(avgLatencyMs)}
           </span>
         </div>
         {wordCount > 0 && (
@@ -66,16 +70,10 @@ export function DiagnosticResult({
         )}
       </div>
 
-      {error && (
-        <p role="alert" className="mt-4 text-sm text-[var(--danger)]">
-          {error}
-        </p>
-      )}
-
       <div className="mt-auto pt-8">
-        <Button size="lg" fullWidth onClick={onStart}>
+        <LinkButton href="/train" size="lg" fullWidth>
           Start your first session
-        </Button>
+        </LinkButton>
       </div>
     </div>
   )

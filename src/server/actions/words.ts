@@ -173,10 +173,35 @@ export async function importCustomWords(csv: unknown): Promise<ActionResult<Impo
   const supabase = await createServerSupabase()
 
   try {
+    // Words the learner already added. Filtering here rather than relying on
+    // an upsert keeps the duplicate report accurate and avoids depending on
+    // index inference for a partial unique index.
+    const { data: owned } = await supabase
+      .from('words')
+      .select('lemma, part_of_speech')
+      .eq('created_by', user.id)
+
+    const ownedKeys = new Set(
+      (owned ?? []).map((row) => `${row.lemma.toLowerCase()}::${row.part_of_speech}`)
+    )
+
+    const fresh = valid.filter((row) => {
+      const key = `${row.lemma.toLowerCase()}::${row.part_of_speech}`
+      if (ownedKeys.has(key)) {
+        issues.push({ row: 0, message: `“${row.lemma}” is already in your words.` })
+        return false
+      }
+      return true
+    })
+
+    if (fresh.length === 0) {
+      return ok({ imported: 0, skipped: table.rows.length, issues })
+    }
+
     const { data: inserted, error } = await supabase
       .from('words')
-      .upsert(
-        valid.map((row) => ({
+      .insert(
+        fresh.map((row) => ({
           lemma: row.lemma,
           part_of_speech: row.part_of_speech,
           cefr: row.cefr,
@@ -187,8 +212,7 @@ export async function importCustomWords(csv: unknown): Promise<ActionResult<Impo
           accepted_answers: splitList(row.accepted_answers),
           tags: splitList(row.tags),
           created_by: user.id,
-        })),
-        { onConflict: 'created_by,lemma,part_of_speech', ignoreDuplicates: true }
+        }))
       )
       .select('id, lemma, part_of_speech')
 
@@ -197,7 +221,7 @@ export async function importCustomWords(csv: unknown): Promise<ActionResult<Impo
     const rows = inserted ?? []
     const byKey = new Map(rows.map((row) => [`${row.lemma.toLowerCase()}::${row.part_of_speech}`, row.id]))
 
-    const examples = valid
+    const examples = fresh
       .filter((row) => row.example)
       .map((row) => ({
         word_id: byKey.get(`${row.lemma.toLowerCase()}::${row.part_of_speech}`),

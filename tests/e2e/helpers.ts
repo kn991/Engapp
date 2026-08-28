@@ -80,9 +80,8 @@ export async function completeOnboarding(page: Page): Promise<void> {
     await skip.click()
   }
 
-  await expect(page.getByRole('button', { name: 'Start your first session' })).toBeVisible({
-    timeout: 45_000,
-  })
+  await page.waitForURL('**/onboarding/result', { timeout: 45_000 })
+  await expect(page.getByRole('link', { name: 'Start your first session' })).toBeVisible()
 }
 
 /** Answers one training question and returns to the question phase. */
