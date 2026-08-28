@@ -44,7 +44,8 @@ export function WordEditor({ initial }: { initial: WordEditorValues }) {
   async function onSubmit(values: WordEditorValues) {
     setFormError(null)
     const result = await saveCuratedWord({
-      id: values.id,
+      // A new word has no id; the hidden field submits an empty string.
+      id: values.id || undefined,
       lemma: values.lemma,
       partOfSpeech: values.partOfSpeech,
       cefr: values.cefr,

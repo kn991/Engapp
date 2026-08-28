@@ -7,8 +7,9 @@ import { ErrorState } from '@/components/ui/error-state'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   DAILY_GOAL_OPTIONS,
-  summariseDiagnostic,
   LATENCY_THRESHOLDS,
+  summariseDiagnostic,
+  targetItemCount,
   type SessionItem,
 } from '@/domain/learning'
 import { completeOnboarding, loadDiagnostic, savePreferences } from '@/server/actions/onboarding'
@@ -234,7 +235,7 @@ export function OnboardingFlow({ displayName }: { displayName: string | null }) 
         choices={DAILY_GOAL_OPTIONS.map((minutes) => ({
           value: minutes,
           label: `${minutes} min`,
-          hint: `About ${Math.round((minutes * 60) / 14)} words a day.`,
+          hint: `About ${targetItemCount(minutes)} words a day.`,
         }))}
         value={goal}
         onChange={(value) => setGoal(value)}

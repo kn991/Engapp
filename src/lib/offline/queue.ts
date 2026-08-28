@@ -57,7 +57,12 @@ async function withStore<T>(
   })
 }
 
-export async function enqueueAttempts(attempts: PendingAttempt[]): Promise<void> {
+/**
+ * Stores attempts durably. Returns false when storage is unavailable (private
+ * mode, blocked cookies, quota) so the caller can fall back to memory and the
+ * session still submits.
+ */
+export async function enqueueAttempts(attempts: PendingAttempt[]): Promise<boolean> {
   try {
     const db = await openDb()
     await new Promise<void>((resolve, reject) => {
@@ -67,9 +72,9 @@ export async function enqueueAttempts(attempts: PendingAttempt[]): Promise<void>
       tx.oncomplete = () => resolve()
       tx.onerror = () => reject(tx.error ?? new Error('IndexedDB write failed'))
     })
+    return true
   } catch {
-    // Storage can be blocked (private mode, quota). The session continues in
-    // memory; only crash recovery is lost, which the caller already tolerates.
+    return false
   }
 }
 

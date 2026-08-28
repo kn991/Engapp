@@ -24,6 +24,11 @@ major_version = 17
 [db.pooler]
 enabled = false
 
+[db.seed]
+# The curated vocabulary ships as a migration, so a hosted project is fully
+# populated by `supabase db push` alone. There is no separate seed step.
+enabled = false
+
 [studio]
 enabled = true
 port = 54323

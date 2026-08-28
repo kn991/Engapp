@@ -101,7 +101,8 @@ export const diagnosticResultSchema = z.object({
 })
 
 export const adminWordSchema = customWordSchema.extend({
-  id: uuidSchema.optional(),
+  // Empty means "create"; a uuid means "update".
+  id: z.preprocess((value) => (value === '' ? undefined : value), uuidSchema.optional()),
   isArchived: z.boolean().optional(),
   examples: z
     .array(

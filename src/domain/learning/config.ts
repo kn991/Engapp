@@ -98,10 +98,13 @@ export const SESSION_MIX = {
 } as const
 
 export const SESSION = {
-  /** Roughly how long one item takes, used to turn minutes into item counts. */
-  secondsPerItem: 14,
+  /**
+   * Roughly how long one item takes end to end: reading the cue, retrieving
+   * the word, typing it, and reading the feedback.
+   */
+  secondsPerItem: 20,
   minItems: 8,
-  maxItems: 40,
+  maxItems: 30,
   /** Never introduce more than this many unseen words in one session. */
   maxNewPerSession: 8,
   /** Do not repeat the same word within this many items. */

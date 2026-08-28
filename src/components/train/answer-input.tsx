@@ -56,7 +56,7 @@ export const AnswerInput = forwardRef<HTMLInputElement, AnswerInputProps>(functi
           'text-[1.25rem] tracking-[0.01em] outline-none transition-colors duration-150',
           micSupported ? 'pr-12 pl-12' : 'px-4',
           review
-            ? 'border-[var(--border)] text-[var(--muted)]'
+            ? 'border-[var(--border)] bg-[var(--surface-2)] text-[var(--muted)] focus:ring-0'
             : 'border-[var(--border-strong)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/25'
         )}
       />

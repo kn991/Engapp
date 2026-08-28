@@ -22,7 +22,12 @@ import {
   type RecallBand,
   type SessionItem,
 } from '@/domain/learning'
-import { enqueueAttempts, removeAttempts, type PendingAttempt } from '@/lib/offline/queue'
+import {
+  enqueueAttempts,
+  readPendingAttempts,
+  removeAttempts,
+  type PendingAttempt,
+} from '@/lib/offline/queue'
 import { vibrate } from '@/lib/haptics'
 import { isSpeechRecognitionSupported, startRecognition, type RecognitionHandle } from '@/lib/speech'
 import { uuid } from '@/lib/utils'
@@ -62,6 +67,9 @@ interface RecordedAttempt {
 /** Flush after this many answers so nothing sits unsent for long. */
 const FLUSH_EVERY = 3
 
+/** Must stay at or below the batch limit the server action accepts. */
+const MAX_BATCH = 50
+
 export function TrainingSession({ sessionId, items, localDay, settings }: Props) {
   const router = useRouter()
 
@@ -83,7 +91,9 @@ export function TrainingSession({ sessionId, items, localDay, settings }: Props)
   const submittingRef = useRef(false)
   const recognitionRef = useRef<RecognitionHandle | null>(null)
   const recordedRef = useRef<RecordedAttempt[]>([])
-  const outboxRef = useRef<PendingAttempt[]>([])
+  /** Fallback for browsers where IndexedDB is unavailable. */
+  const memoryRef = useRef<PendingAttempt[]>([])
+  const inFlightRef = useRef<Promise<void> | null>(null)
   const startedAtRef = useRef<number>(0)
 
   const [renderedItemId, setRenderedItemId] = useState<string | null>(null)
@@ -122,29 +132,63 @@ export function TrainingSession({ sessionId, items, localDay, settings }: Props)
     [current, hintLevel]
   )
 
+  /**
+   * Sends everything sitting in the outbox.
+   *
+   * The outbox, not a variable in this component, is the source of truth. A
+   * failed send, a closed tab or a dead network leaves the answers exactly
+   * where the next flush will find them, and the server deduplicates by client
+   * event id, so re-sending is always safe.
+   *
+   * Flushes are serialised. A forced flush waits for one already running and
+   * then runs itself, so finishing a session never races ahead of the answers.
+   */
+  const drain = useCallback(async (force: boolean) => {
+    const stored = await readPendingAttempts()
+    const pending = mergeQueues(stored, memoryRef.current)
+    if (pending.length === 0) return
+    if (!force && pending.length < FLUSH_EVERY) return
+
+    for (const [batchSessionId, attempts] of groupBySession(pending)) {
+      for (let start = 0; start < attempts.length; start += MAX_BATCH) {
+        const chunk = attempts.slice(start, start + MAX_BATCH)
+        const result = await submitReviewBatch({
+          sessionId: batchSessionId,
+          attempts: chunk.map(
+            ({ sessionId: _sessionId, queuedAt: _queuedAt, ...attempt }) => attempt
+          ),
+        })
+        if (!result.ok) return
+
+        const sent = new Set(chunk.map((attempt) => attempt.clientEventId))
+        memoryRef.current = memoryRef.current.filter(
+          (attempt) => !sent.has(attempt.clientEventId)
+        )
+        await removeAttempts([...sent])
+      }
+    }
+  }, [])
+
   const flush = useCallback(
     async (force: boolean) => {
-      const pending = outboxRef.current
-      if (pending.length === 0) return
-      if (!force && pending.length < FLUSH_EVERY) return
+      const running = inFlightRef.current
+      if (running) {
+        await running.catch(() => {})
+        if (!force) return
+      }
 
-      const batch = pending.slice()
-      outboxRef.current = []
-
-      const result = await submitReviewBatch({
-        sessionId,
-        attempts: batch.map(({ sessionId: _sessionId, queuedAt: _queuedAt, ...attempt }) => attempt),
+      const run = drain(force).catch(() => {
+        // Offline, or the request was cut off. Everything stays in the outbox
+        // and the next flush, reconnection or visit picks it up.
       })
-
-      if (result.ok) {
-        await removeAttempts(batch.map((attempt) => attempt.clientEventId))
-      } else {
-        // Put them back so the next flush retries. The server deduplicates by
-        // clientEventId, so a partially applied batch cannot double count.
-        outboxRef.current = [...batch, ...outboxRef.current]
+      inFlightRef.current = run
+      try {
+        await run
+      } finally {
+        if (inFlightRef.current === run) inFlightRef.current = null
       }
     },
-    [sessionId]
+    [drain]
   )
 
   const stopListening = useCallback(() => {
@@ -242,9 +286,11 @@ export function TrainingSession({ sessionId, items, localDay, settings }: Props)
       sessionId,
       queuedAt: Date.now(),
     }
-    outboxRef.current.push(pending)
-    void enqueueAttempts([pending])
-    void flush(false)
+    void (async () => {
+      const stored = await enqueueAttempts([pending])
+      if (!stored) memoryRef.current.push(pending)
+      await flush(false)
+    })()
     },
     [
       answer,
@@ -351,6 +397,25 @@ export function TrainingSession({ sessionId, items, localDay, settings }: Props)
     return () => window.removeEventListener('online', onOnline)
   }, [flush])
 
+  /**
+   * Drain anything left by a previous visit - a closed tab, a crash, or a
+   * session abandoned while offline - before this session adds to it.
+   */
+  useEffect(() => {
+    void flush(true)
+  }, [flush])
+
+  // Push whatever is queued when the tab is backgrounded or closed.
+  useEffect(() => {
+    const onHide = () => void flush(true)
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', onHide)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('pagehide', onHide)
+    }
+  }, [flush])
+
   if (phase === 'summary') {
     return (
       <SessionSummary
@@ -372,7 +437,12 @@ export function TrainingSession({ sessionId, items, localDay, settings }: Props)
         <IconButton label="Leave session" onClick={() => setShowExit(true)}>
           <ArrowLeftIcon />
         </IconButton>
-        <SessionProgress className="flex-1" current={index + (phase === 'feedback' ? 1 : 0)} total={items.length} />
+        <SessionProgress
+          className="flex-1"
+          current={index + 1}
+          completed={index + (phase === 'feedback' ? 1 : 0)}
+          total={items.length}
+        />
       </div>
 
       <div className="flex flex-1 flex-col justify-center px-5 pb-4">
@@ -408,7 +478,15 @@ export function TrainingSession({ sessionId, items, localDay, settings }: Props)
             <p className="text-[0.6875rem] font-semibold tracking-[0.14em] text-[var(--muted)] uppercase">
               {hint.label}
             </p>
-            <p className="mt-1 text-[1.0625rem] tracking-[0.08em]">{hint.text}</p>
+            <p
+              className={
+                hint.level >= 2
+                  ? 'mt-1 text-[1.25rem] tracking-[0.18em]'
+                  : 'mx-auto mt-1 max-w-[34ch] text-[1.0625rem] leading-relaxed'
+              }
+            >
+              {hint.text}
+            </p>
           </div>
         )}
       </div>
@@ -500,6 +578,29 @@ export function TrainingSession({ sessionId, items, localDay, settings }: Props)
       />
     </div>
   )
+}
+
+/** Outbox entries from storage and memory, oldest first, without duplicates. */
+function mergeQueues(
+  stored: PendingAttempt[],
+  memory: PendingAttempt[]
+): PendingAttempt[] {
+  const byId = new Map<string, PendingAttempt>()
+  for (const attempt of [...stored, ...memory]) byId.set(attempt.clientEventId, attempt)
+  return [...byId.values()].sort((a, b) => a.queuedAt - b.queuedAt)
+}
+
+/** Answers are submitted per session so none is attributed to the wrong one. */
+function groupBySession(
+  attempts: PendingAttempt[]
+): Array<[string | null, PendingAttempt[]]> {
+  const bySession = new Map<string | null, PendingAttempt[]>()
+  for (const attempt of attempts) {
+    const list = bySession.get(attempt.sessionId) ?? []
+    list.push(attempt)
+    bySession.set(attempt.sessionId, list)
+  }
+  return [...bySession.entries()]
 }
 
 /**

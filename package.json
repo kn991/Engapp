@@ -22,7 +22,9 @@
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
     "db:push": "supabase db push",
-    "db:generate-seed": "tsx scripts/generate-seed.ts"
+    "db:generate-seed": "tsx scripts/generate-seed.ts",
+    "screenshots": "node scripts/screenshots.mjs",
+    "smoke": "node scripts/smoke/features.mjs && node scripts/smoke/admin.mjs && node scripts/smoke/account.mjs && node scripts/smoke/offline.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

@@ -52,6 +52,10 @@ export default async function ProgressPage() {
               activating={overview.activating + overview.strongCount}
               active={overview.activeCount}
             />
+            <p className="mt-4 border-t border-[var(--border)] pt-3 text-sm text-[var(--muted)]">
+              Every word in your set, and how far each one has moved towards
+              coming back on its own.
+            </p>
           </div>
         </section>
 
@@ -65,6 +69,11 @@ export default async function ProgressPage() {
           <SectionTitle>Last 7 days</SectionTitle>
           <div className="mt-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] px-4 py-4">
             <WeekBars minutes={data.weekMinutes} timeZone={bundle.timeZone} />
+            {data.weekMinutes.every((minutes) => minutes === 0) && (
+              <p className="mt-3 text-sm text-[var(--muted)]">
+                No training recorded in the last seven days.
+              </p>
+            )}
           </div>
         </section>
 

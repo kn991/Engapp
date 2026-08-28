@@ -12,7 +12,7 @@ export function AppPreview() {
     <div className="grid gap-4 sm:grid-cols-2">
       <PhoneFrame label="A question during training">
         <div className="flex h-full flex-col p-4">
-          <SessionProgress current={8} total={20} />
+          <SessionProgress current={8} completed={7} total={20} />
           <div className="flex flex-1 flex-col justify-center text-center">
             <p className="text-[0.625rem] font-semibold tracking-[0.14em] text-[var(--muted)] uppercase">
               Write the English word
@@ -30,7 +30,7 @@ export function AppPreview() {
 
       <PhoneFrame label="Feedback after an answer">
         <div className="flex h-full flex-col p-4">
-          <SessionProgress current={9} total={20} />
+          <SessionProgress current={9} completed={8} total={20} />
           <div className="flex flex-1 flex-col items-center justify-center text-center">
             <p lang="ru" className="text-[0.8125rem] text-[var(--muted)]">
               избегать

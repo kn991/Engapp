@@ -33,7 +33,7 @@ export function StartSessionCard({
       </p>
       <p className="mt-1 text-sm text-[var(--muted)]">
         {dueNow > 0
-          ? 'Recall each one before the pause gets long.'
+          ? 'Get each one out before the pause shows.'
           : 'Train anyway to keep your fastest words fast.'}
       </p>
 

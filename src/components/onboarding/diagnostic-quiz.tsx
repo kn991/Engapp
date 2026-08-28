@@ -80,7 +80,7 @@ export function DiagnosticQuiz({
 
   return (
     <div className="safe-top safe-bottom flex min-h-dvh flex-col px-5 pt-4 pb-5">
-      <SessionProgress current={index} total={items.length} />
+      <SessionProgress current={index + 1} completed={index} total={items.length} />
 
       <div className="flex flex-1 flex-col justify-center">
         <div className="text-center">

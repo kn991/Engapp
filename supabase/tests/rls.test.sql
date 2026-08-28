@@ -41,20 +41,31 @@ values
 
 -- --------------------------- the profile trigger --------------------------
 
+-- Scoped to the fixture users so the result does not depend on whatever else
+-- the database already contains.
 select is(
-  (select count(*) from public.profiles),
+  (select count(*) from public.profiles where id in (
+    '11111111-1111-4111-8111-111111111111',
+    '22222222-2222-4222-8222-222222222222',
+    '33333333-3333-4333-8333-333333333333')),
   3::bigint,
   'signing up creates a profile row for every auth user'
 );
 
 select is(
-  (select count(*) from public.user_settings),
+  (select count(*) from public.user_settings where user_id in (
+    '11111111-1111-4111-8111-111111111111',
+    '22222222-2222-4222-8222-222222222222',
+    '33333333-3333-4333-8333-333333333333')),
   3::bigint,
   'signing up creates a settings row'
 );
 
 select is(
-  (select count(*) from public.user_progress),
+  (select count(*) from public.user_progress where user_id in (
+    '11111111-1111-4111-8111-111111111111',
+    '22222222-2222-4222-8222-222222222222',
+    '33333333-3333-4333-8333-333333333333')),
   3::bigint,
   'signing up creates a progress row'
 );
