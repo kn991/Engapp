@@ -372,6 +372,20 @@ export interface Database {
         Returns: Tables<'words'>[]
       }
       recovered_word_count: { Args: Record<PropertyKey, never>; Returns: number }
+      most_improved_words: {
+        Args: { p_limit?: number }
+        Returns: Array<{
+          word_id: string
+          lemma: string
+          first_latency_ms: number
+          recent_latency_ms: number
+          gain: number
+        }>
+      }
+      tag_mastery: {
+        Args: { p_min_words?: number }
+        Returns: Array<{ tag: string; words: number; avg_mastery: number }>
+      }
       user_word_overview: {
         Args: Record<PropertyKey, never>
         Returns: Array<{

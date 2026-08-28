@@ -280,3 +280,56 @@ $$;
 
 revoke all on function public.user_word_overview() from public, anon;
 grant execute on function public.user_word_overview() to authenticated;
+
+-- Words whose recall time has dropped the most since the first attempt.
+create or replace function public.most_improved_words(p_limit int default 5)
+returns table (word_id uuid, lemma text, first_latency_ms int, recent_latency_ms int, gain int)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select
+    uw.word_id,
+    w.lemma,
+    uw.first_latency_ms,
+    uw.recent_latency_ms,
+    (((uw.first_latency_ms - uw.recent_latency_ms)::numeric
+      / nullif(uw.first_latency_ms, 0)) * 100)::int as gain
+  from public.user_words uw
+  join public.words w on w.id = uw.word_id
+  where uw.user_id = (select auth.uid())
+    and uw.first_latency_ms is not null
+    and uw.recent_latency_ms is not null
+    and uw.first_latency_ms > uw.recent_latency_ms
+    and uw.correct_count >= 2
+  order by gain desc
+  limit least(greatest(p_limit, 1), 20);
+$$;
+
+revoke all on function public.most_improved_words(int) from public, anon;
+grant execute on function public.most_improved_words(int) to authenticated;
+
+-- Average mastery per tag, so the weekly report can name a weak area.
+create or replace function public.tag_mastery(p_min_words int default 3)
+returns table (tag text, words int, avg_mastery int)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select
+    tag,
+    count(*)::int as words,
+    avg(uw.mastery)::int as avg_mastery
+  from public.user_words uw
+  join public.words w on w.id = uw.word_id
+  cross join lateral unnest(w.tags) as tag
+  where uw.user_id = (select auth.uid()) and uw.review_count > 0
+  group by tag
+  having count(*) >= greatest(p_min_words, 1)
+  order by avg_mastery asc;
+$$;
+
+revoke all on function public.tag_mastery(int) from public, anon;
+grant execute on function public.tag_mastery(int) to authenticated;
