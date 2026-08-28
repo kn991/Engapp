@@ -154,6 +154,7 @@ const importSchema = z.object({
 export async function previewCuratedImport(
   csv: unknown
 ): Promise<ActionResult<AdminImportPreview>> {
+  await requireAdmin()
   const check = await validateCsv(csv)
   if (!check.ok) return check
   return ok(check.data.preview)
@@ -163,6 +164,7 @@ export async function previewCuratedImport(
 export async function commitCuratedImport(
   csv: unknown
 ): Promise<ActionResult<{ imported: number; skipped: number }>> {
+  await requireAdmin()
   const check = await validateCsv(csv)
   if (!check.ok) return check
 

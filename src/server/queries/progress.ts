@@ -12,7 +12,7 @@ import {
   type AchievementProgress,
 } from '@/domain/learning'
 import { createServerSupabase } from '@/lib/supabase/server'
-import { buildAchievementContext } from '@/server/actions/training'
+import { buildAchievementContext } from '@/server/queries/achievements'
 import { loadWordOverview, type WordOverview } from './home'
 import { loadProfileBundle } from './profile'
 

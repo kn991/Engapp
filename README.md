@@ -293,6 +293,8 @@ the outside:
   deletion including that the account can no longer sign in
 - answers given with the network cut: stored in IndexedDB, absent from the
   server, synced on reconnect, and never counted twice
+- the service worker: registration, the precached shell, and a navigation with
+  no network falling back to the offline page
 
 Each script creates a throwaway account, so they are safe to run repeatedly.
 
@@ -419,6 +421,10 @@ Configuration.
 <http://localhost:54324> locally. In production, Supabase's built-in email has
 a low rate limit; configure SMTP for real use.
 
+**A session refreshed halfway looks unfinished** — the answers are saved; only
+the summary is skipped, and the session row stays open. The next session builds
+a fresh queue from the current schedule.
+
 **`/train` says there is nothing to train** — every word is scheduled for
 later. Add words of your own, or come back when something is due.
 
@@ -439,6 +445,12 @@ chromium`, or set `PLAYWRIGHT_CHROMIUM_PATH` to an existing binary.
   notifications are not sent yet, rather than pretending.
 - Pronunciation assessment. Speak mode transcribes what you said and grades the
   words; it does not judge your accent and never claims to.
-- A Russian interface. The UI is English-first, but strings are isolated and
-  learning content is stored separately from interface text, so adding a locale
-  does not mean touching every component.
+- A Russian interface. The UI is English-first. What is already in place for a
+  second language: every Russian cue, definition and example lives in the
+  database rather than in a component, so no learning content would be
+  translated or moved; the recurring vocabulary of the interface (word
+  statuses, exercise instructions, recall bands, achievements, challenges)
+  sits in a handful of maps under `src/domain/learning`; and every element
+  that renders a language carries a `lang` attribute. What is still to do:
+  page-level copy is inline English and would need extracting into a
+  catalogue.
