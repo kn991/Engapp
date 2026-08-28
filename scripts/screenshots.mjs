@@ -111,16 +111,15 @@ await sp.getByRole('button', { name: 'Check' }).click()
 await sp.screenshot({ path: `${OUT}/train-feedback-390.png` })
 await sp.getByRole('button', { name: /Continue|Finish/ }).click()
 
-for (let i = 0; i < 12; i += 1) {
+// Work through the rest of the session so the summary is real.
+for (let i = 0; i < 60; i += 1) {
   const check = sp.getByRole('button', { name: 'Check' })
   if (!(await check.isVisible().catch(() => false))) break
   await sp.getByLabel('Your answer in English').fill(i % 2 === 0 ? 'maintain' : 'zzz')
   await check.click()
   await sp.getByRole('button', { name: /Continue|Finish/ }).click()
 }
-await sp.getByRole('button', { name: 'End session' }).click().catch(() => {})
-await sp.getByRole('button', { name: 'End and see summary' }).click().catch(() => {})
-await sp.getByText('Session complete').waitFor({ timeout: 45000 }).catch(() => {})
+await sp.getByText('Session complete').waitFor({ timeout: 60000 })
 await sp.screenshot({ path: `${OUT}/session-summary-390.png`, fullPage: true })
 
 const storage = await setup.storageState()

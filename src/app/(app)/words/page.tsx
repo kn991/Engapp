@@ -39,15 +39,25 @@ const EMPTY_COPY: Record<WordFilter, { title: string; description: string }> = {
 export default async function WordsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string; q?: string }>
+  searchParams: Promise<{ filter?: string; q?: string; page?: string }>
 }) {
   const user = await requireUser()
   const params = await searchParams
   const filter = normaliseFilter(params.filter)
   const search = (params.q ?? '').slice(0, 60)
+  const page = normalisePage(params.page)
 
-  const { entries } = await loadWordList({ userId: user.id, filter, search })
+  const { entries, hasMore } = await loadWordList({ userId: user.id, filter, search, page })
   const empty = EMPTY_COPY[filter]
+
+  const pageHref = (target: number) => {
+    const next = new URLSearchParams()
+    if (filter !== 'all') next.set('filter', filter)
+    if (search) next.set('q', search)
+    if (target > 0) next.set('page', String(target + 1))
+    const query = next.toString()
+    return query ? `/words?${query}` : '/words'
+  }
 
   return (
     <>
@@ -72,17 +82,47 @@ export default async function WordsPage({
             description={search ? 'Try a different word or clear the search.' : empty.description}
           />
         ) : (
-          <ul
-            aria-label="Your words"
-            className="mt-4 divide-y divide-[var(--border)] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]">
-            {entries.map((entry) => (
-              <WordRow key={entry.word.id} word={entry.word} state={entry.state} />
-            ))}
-          </ul>
+          <>
+            <ul
+              aria-label="Your words"
+              className="mt-4 divide-y divide-[var(--border)] overflow-hidden rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)]"
+            >
+              {entries.map((entry) => (
+                <WordRow key={entry.word.id} word={entry.word} state={entry.state} />
+              ))}
+            </ul>
+
+            {(page > 0 || hasMore) && (
+              <nav aria-label="Pages" className="mt-4 flex items-center justify-between gap-3">
+                {page > 0 ? (
+                  <LinkButton href={pageHref(page - 1)} variant="secondary" size="sm">
+                    Previous
+                  </LinkButton>
+                ) : (
+                  <span />
+                )}
+                <span className="tabular text-sm text-[var(--muted)]">Page {page + 1}</span>
+                {hasMore ? (
+                  <LinkButton href={pageHref(page + 1)} variant="secondary" size="sm">
+                    Next
+                  </LinkButton>
+                ) : (
+                  <span />
+                )}
+              </nav>
+            )}
+          </>
         )}
       </div>
     </>
   )
+}
+
+/** Pages are 1-based in the URL and 0-based in the query. */
+function normalisePage(value: string | undefined): number {
+  const parsed = Number.parseInt(value ?? '1', 10)
+  if (!Number.isFinite(parsed) || parsed < 1) return 0
+  return Math.min(parsed - 1, 200)
 }
 
 function normaliseFilter(value: string | undefined): WordFilter {

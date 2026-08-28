@@ -69,7 +69,7 @@ export default async function ProgressPage() {
           <SectionTitle>Last 7 days</SectionTitle>
           <div className="mt-3 rounded-[var(--radius-lg)] border border-[var(--border)] bg-[var(--surface)] px-4 py-4">
             <WeekBars minutes={data.weekMinutes} timeZone={bundle.timeZone} />
-            {data.weekMinutes.every((minutes) => minutes === 0) && (
+            {!data.weekHasActivity && (
               <p className="mt-3 text-sm text-[var(--muted)]">
                 No training recorded in the last seven days.
               </p>

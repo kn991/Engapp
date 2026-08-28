@@ -12,6 +12,7 @@ export interface HeatmapDay {
  */
 export function Heatmap({ days }: { days: HeatmapDay[] }) {
   const max = Math.max(1, ...days.map((day) => day.reviews))
+  const active = days.filter((day) => day.reviews > 0).length
   const weeks: HeatmapDay[][] = []
   for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7))
 
@@ -34,7 +35,7 @@ export function Heatmap({ days }: { days: HeatmapDay[] }) {
         ))}
       </div>
       <p className="mt-2 text-xs text-[var(--muted)]">
-        {days.filter((day) => day.reviews > 0).length} active days in the last {days.length}
+        {active} active {active === 1 ? 'day' : 'days'} in the last {days.length}
       </p>
     </div>
   )

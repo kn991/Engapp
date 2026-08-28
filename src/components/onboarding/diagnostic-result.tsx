@@ -16,6 +16,21 @@ export interface DiagnosticResultProps {
  * retrieve. Almost everyone arrives with a large passive vocabulary; the
  * interesting number is how much of it comes back in time.
  */
+/**
+ * The line under the level has to match what actually happened. Telling
+ * someone they already know these words when none of them came out is the
+ * fastest way to lose their trust.
+ */
+function summaryLine(retrievedShare: number): string {
+  if (retrievedShare >= 60) {
+    return 'You already know many of these words. We train the speed at which they come back.'
+  }
+  if (retrievedShare >= 25) {
+    return 'Some came back, most did not. That gap is exactly what we train.'
+  }
+  return 'Recognising a word and producing it are different skills. We start from what you could retrieve.'
+}
+
 export function DiagnosticResult({
   estimatedLevel,
   fastShare,
@@ -38,9 +53,7 @@ export function DiagnosticResult({
       <h1 className="font-display mt-2 text-[1.75rem] leading-tight">
         Active recall: {estimatedLevel}
       </h1>
-      <p className="mt-2 text-[0.9375rem] text-[var(--muted)]">
-        You already know many of these words. We train the speed at which they come back.
-      </p>
+      <p className="mt-2 text-[0.9375rem] text-[var(--muted)]">{summaryLine(fastShare + slowShare)}</p>
 
       <div className="mt-7 space-y-4">
         {rows.map((row) => (

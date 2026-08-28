@@ -40,6 +40,8 @@ export function WordFilters({
 
   function push(next: { filter?: WordFilter; q?: string }) {
     const searchParams = new URLSearchParams(params.toString())
+    // Any change to what is being listed starts again from the first page.
+    searchParams.delete('page')
     if (next.filter !== undefined) {
       if (next.filter === 'all') searchParams.delete('filter')
       else searchParams.set('filter', next.filter)

@@ -38,6 +38,8 @@ export interface ProgressData {
   level: ReturnType<typeof levelFromXp>
   days: DayCell[]
   weekMinutes: number[]
+  /** True when the last seven days contain any reviews at all. */
+  weekHasActivity: boolean
   latencyThisMonth: number | null
   latencyLastMonth: number | null
   latencyChange: number | null
@@ -112,9 +114,10 @@ export async function loadProgressData(userId: string): Promise<ProgressData | n
     (acc, row) => {
       acc.seconds += row.seconds_trained
       acc.activated += row.words_activated
+      acc.reviews += row.reviews
       return acc
     },
-    { seconds: 0, activated: 0 }
+    { seconds: 0, activated: 0, reviews: 0 }
   )
 
   const firstHalf = week.slice(0, Math.ceil(week.length / 2))
@@ -144,6 +147,7 @@ export async function loadProgressData(userId: string): Promise<ProgressData | n
     level: levelFromXp(bundle.progress.xp),
     days,
     weekMinutes,
+    weekHasActivity: weekTotals.reviews > 0,
     latencyThisMonth,
     latencyLastMonth,
     latencyChange: latencyImprovement(latencyLastMonth, latencyThisMonth),

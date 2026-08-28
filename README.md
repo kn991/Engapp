@@ -287,6 +287,8 @@ the outside:
 
 - vocabulary search and filters, adding a word, duplicate rejection, CSV
   import with its error report, data export, the offline banner
+- paging through a long word list, and a filter change starting again from the
+  first page
 - the admin panel: list, filters, create, edit, archive, and a CSV import that
   previews before it writes
 - password reset all the way through the real email in Mailpit, and account
