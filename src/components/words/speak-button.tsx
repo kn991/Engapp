@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { SoundIcon } from '@/components/icons'
 import { IconButton } from '@/components/ui/icon-button'
 import { isSpeechSynthesisSupported, speak } from '@/lib/speech'
+import { useClientValue } from '@/lib/use-client-value'
 
 export function SpeakButton({ text }: { text: string }) {
-  const [supported, setSupported] = useState(false)
-  useEffect(() => setSupported(isSpeechSynthesisSupported()), [])
+  const read = useCallback(() => isSpeechSynthesisSupported(), [])
+  const supported = useClientValue(read, false)
   if (!supported) return null
 
   return (

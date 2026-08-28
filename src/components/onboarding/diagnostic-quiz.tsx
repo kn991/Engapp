@@ -31,15 +31,21 @@ export function DiagnosticQuiz({
   onComplete: (answers: DiagnosticAnswer[]) => void
 }) {
   const [index, setIndex] = useState(0)
+  const [renderedIndex, setRenderedIndex] = useState(0)
   const [answer, setAnswer] = useState('')
   const answersRef = useRef<DiagnosticAnswer[]>([])
-  const shownAtRef = useRef(performance.now())
+  const shownAtRef = useRef(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const current = items[index]
 
-  useEffect(() => {
+  // Clear the field the moment a new question renders, not one paint later.
+  if (renderedIndex !== index) {
+    setRenderedIndex(index)
     setAnswer('')
+  }
+
+  useEffect(() => {
     shownAtRef.current = performance.now()
     const timer = window.setTimeout(() => inputRef.current?.focus(), 40)
     return () => window.clearTimeout(timer)

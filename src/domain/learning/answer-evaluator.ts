@@ -32,7 +32,8 @@ export interface EvaluateOptions {
 }
 
 const LEADING_NOISE = /^(?:to|a|an|the)\s+/i
-const PUNCTUATION = /[.,!?;:"'`’“”()[\]{}<>]/g
+const APOSTROPHES = /['`]/g
+const PUNCTUATION = /[.,!?;:"“”()[\]{}<>]/g
 
 /**
  * Normalises a submission for comparison: case, surrounding and repeated
@@ -44,6 +45,8 @@ export function normalizeAnswer(raw: string): string {
     .normalize('NFKC')
     .replace(/[‘’]/g, "'")
     .replace(/[“”]/g, '"')
+    // Apostrophes disappear rather than splitting a word in two.
+    .replace(APOSTROPHES, '')
     .replace(PUNCTUATION, ' ')
     .replace(/[-–—_/]/g, ' ')
     .toLowerCase()

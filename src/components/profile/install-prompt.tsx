@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useClientValue } from '@/lib/use-client-value'
 import { Button } from '@/components/ui/button'
 import { SectionTitle } from '@/components/ui/card'
 
@@ -15,18 +16,23 @@ interface BeforeInstallPromptEvent extends Event {
  */
 export function InstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
-  const [isIos, setIsIos] = useState(false)
-  const [installed, setInstalled] = useState(false)
+  const [dismissedByInstall, setDismissedByInstall] = useState(false)
+
+  const readStandalone = useCallback(
+    () =>
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true,
+    []
+  )
+  const readIsIos = useCallback(() => {
+    const ua = window.navigator.userAgent
+    return /iPad|iPhone|iPod/.test(ua) && !/CriOS|FxiOS/.test(ua)
+  }, [])
+
+  const standalone = useClientValue(readStandalone, false)
+  const isIos = useClientValue(readIsIos, false)
 
   useEffect(() => {
-    const standalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true
-    setInstalled(standalone)
-
-    const ua = window.navigator.userAgent
-    setIsIos(/iPad|iPhone|iPod/.test(ua) && !/CriOS|FxiOS/.test(ua))
-
     const handler = (event: Event) => {
       event.preventDefault()
       setDeferred(event as BeforeInstallPromptEvent)
@@ -35,6 +41,7 @@ export function InstallPrompt() {
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
 
+  const installed = standalone || dismissedByInstall
   if (installed) return null
   if (!deferred && !isIos) return null
 
@@ -53,7 +60,7 @@ export function InstallPrompt() {
             onClick={async () => {
               await deferred.prompt()
               const choice = await deferred.userChoice
-              if (choice.outcome === 'accepted') setInstalled(true)
+              if (choice.outcome === 'accepted') setDismissedByInstall(true)
               setDeferred(null)
             }}
           >

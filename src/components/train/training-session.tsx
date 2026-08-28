@@ -84,18 +84,31 @@ export function TrainingSession({ sessionId, items, localDay, settings }: Props)
   const recognitionRef = useRef<RecognitionHandle | null>(null)
   const recordedRef = useRef<RecordedAttempt[]>([])
   const outboxRef = useRef<PendingAttempt[]>([])
-  const startedAtRef = useRef<number>(Date.now())
+  const startedAtRef = useRef<number>(0)
+
+  const [renderedItemId, setRenderedItemId] = useState<string | null>(null)
 
   const current = items[index]
   const micSupported =
     settings.inputMode !== 'typing' && isSpeechRecognitionSupported()
 
-  // Reset the per-question state and start the clock.
-  useEffect(() => {
-    if (phase !== 'question') return
+  // Clear the field as soon as a new question renders, rather than one paint
+  // later, so the learner never types into the previous answer.
+  if (phase === 'question' && current && renderedItemId !== current.id) {
+    setRenderedItemId(current.id)
     setAnswer('')
     setHintLevel(0)
     setAcceptState('idle')
+  }
+
+  // The session clock starts when the first question is actually on screen.
+  useEffect(() => {
+    if (startedAtRef.current === 0) startedAtRef.current = Date.now()
+  }, [])
+
+  // Start the per-question clock and hand focus to the input.
+  useEffect(() => {
+    if (phase !== 'question') return
     shownAtRef.current = performance.now()
     submittingRef.current = false
     // A short delay lets the next question paint before focus moves, which
@@ -253,7 +266,7 @@ export function TrainingSession({ sessionId, items, localDay, settings }: Props)
     setPhase('summary')
     await flush(true)
 
-    const durationMs = Date.now() - startedAtRef.current
+    const durationMs = Date.now() - (startedAtRef.current || Date.now())
     const result = await completeSession({ sessionId, durationMs, localDay })
 
     const recorded = recordedRef.current

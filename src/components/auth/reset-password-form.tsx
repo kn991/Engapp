@@ -19,7 +19,7 @@ export function ResetPasswordForm() {
   const {
     register,
     handleSubmit,
-    watch,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<Values>({ defaultValues: { password: '', confirm: '' } })
 
@@ -56,7 +56,8 @@ export function ResetPasswordForm() {
           autoComplete="new-password"
           aria-invalid={Boolean(errors.confirm)}
           {...register('confirm', {
-            validate: (value) => value === watch('password') || 'Both passwords must match.',
+            validate: (value) =>
+              value === getValues('password') || 'Both passwords must match.',
           })}
         />
       </Field>

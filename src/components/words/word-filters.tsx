@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { SearchIcon } from '@/components/icons'
 import { cn } from '@/lib/utils'
 import type { WordFilter } from '@/server/queries/words'
@@ -29,9 +29,14 @@ export function WordFilters({
   const pathname = usePathname()
   const params = useSearchParams()
   const [value, setValue] = useState(search)
+  const [appliedSearch, setAppliedSearch] = useState(search)
   const timer = useRef<number | null>(null)
 
-  useEffect(() => setValue(search), [search])
+  // Re-sync when navigation changes the query string, without an effect.
+  if (appliedSearch !== search) {
+    setAppliedSearch(search)
+    setValue(search)
+  }
 
   function push(next: { filter?: WordFilter; q?: string }) {
     const searchParams = new URLSearchParams(params.toString())
