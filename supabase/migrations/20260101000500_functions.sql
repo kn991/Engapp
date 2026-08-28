@@ -198,3 +198,85 @@ grant execute on function public.unlock_achievements(text[]) to authenticated;
 grant execute on function public.sync_daily_challenges(date, jsonb) to authenticated;
 grant execute on function public.delete_my_account() to authenticated;
 grant execute on function public.word_latency_history(uuid, int) to authenticated;
+
+-- Curated words the caller has not started learning yet. Used to top up a
+-- session with new activation candidates without shipping every word id to the
+-- client to build a NOT IN filter.
+create or replace function public.new_word_candidates(
+  p_limit int default 20,
+  p_levels public.cefr_level[] default null
+)
+returns setof public.words
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select w.*
+  from public.words w
+  where w.created_by is null
+    and not w.is_archived
+    and (p_levels is null or w.cefr = any (p_levels))
+    and not exists (
+      select 1 from public.user_words uw
+      where uw.user_id = (select auth.uid()) and uw.word_id = w.id
+    )
+  order by w.frequency_rank nulls last, random()
+  limit least(greatest(p_limit, 1), 100);
+$$;
+
+revoke all on function public.new_word_candidates(int, public.cefr_level[]) from public, anon;
+grant execute on function public.new_word_candidates(int, public.cefr_level[]) to authenticated;
+
+-- Words the learner has answered wrongly more than once and never repaired.
+create or replace function public.recovered_word_count()
+returns integer
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select count(*)::int
+  from public.user_words
+  where user_id = (select auth.uid())
+    and was_weak
+    and status in ('strong', 'active');
+$$;
+
+revoke all on function public.recovered_word_count() from public, anon;
+grant execute on function public.recovered_word_count() to authenticated;
+
+-- One round trip for the numbers the home and progress screens need.
+create or replace function public.user_word_overview()
+returns table (
+  total          integer,
+  new_count      integer,
+  weak_count     integer,
+  activating     integer,
+  strong_count   integer,
+  active_count   integer,
+  due_now        integer,
+  avg_latency_ms integer,
+  custom_count   integer
+)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select
+    count(*)::int,
+    count(*) filter (where status = 'new')::int,
+    count(*) filter (where status = 'weak')::int,
+    count(*) filter (where status = 'activating')::int,
+    count(*) filter (where status = 'strong')::int,
+    count(*) filter (where status = 'active')::int,
+    count(*) filter (where next_review_at is null or next_review_at <= now())::int,
+    (avg(recent_latency_ms) filter (where recent_latency_ms is not null))::int,
+    (select count(*)::int from public.words w where w.created_by = (select auth.uid()))
+  from public.user_words
+  where user_id = (select auth.uid());
+$$;
+
+revoke all on function public.user_word_overview() from public, anon;
+grant execute on function public.user_word_overview() to authenticated;

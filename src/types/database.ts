@@ -246,12 +246,36 @@ type DiagnosticsRow = {
   created_at: string
 }
 
-type TableDefinition<Row, Insert = Partial<Row>, Update = Partial<Row>> = {
+type Relationship = {
+  foreignKeyName: string
+  columns: string[]
+  isOneToOne: boolean
+  referencedRelation: string
+  referencedColumns: string[]
+}
+
+type TableDefinition<
+  Row,
+  Insert = Partial<Row>,
+  Update = Partial<Row>,
+  Rels extends Relationship[] = [],
+> = {
   Row: Row
   Insert: Insert
   Update: Update
-  Relationships: []
+  Relationships: Rels
 }
+
+/** Every child table hangs off `words` through a `word_id` foreign key. */
+type WordChildRelationship<Name extends string> = [
+  {
+    foreignKeyName: `${Name}_word_id_fkey`
+    columns: ['word_id']
+    isOneToOne: false
+    referencedRelation: 'words'
+    referencedColumns: ['id']
+  },
+]
 
 export interface Database {
   public: {
@@ -271,11 +295,15 @@ export interface Database {
       >
       word_examples: TableDefinition<
         WordExamplesRow,
-        Partial<WordExamplesRow> & { word_id: string; sentence: string }
+        Partial<WordExamplesRow> & { word_id: string; sentence: string },
+        Partial<WordExamplesRow>,
+        WordChildRelationship<'word_examples'>
       >
       word_collocations: TableDefinition<
         WordCollocationsRow,
-        Partial<WordCollocationsRow> & { word_id: string; collocation: string; pattern: string }
+        Partial<WordCollocationsRow> & { word_id: string; collocation: string; pattern: string },
+        Partial<WordCollocationsRow>,
+        WordChildRelationship<'word_collocations'>
       >
       word_family_members: TableDefinition<
         WordFamilyMembersRow,
@@ -283,11 +311,15 @@ export interface Database {
           word_id: string
           form: string
           part_of_speech: PartOfSpeechDb
-        }
+        },
+        Partial<WordFamilyMembersRow>,
+        WordChildRelationship<'word_family_members'>
       >
       user_words: TableDefinition<
         UserWordsRow,
-        Partial<UserWordsRow> & { user_id: string; word_id: string }
+        Partial<UserWordsRow> & { user_id: string; word_id: string },
+        Partial<UserWordsRow>,
+        WordChildRelationship<'user_words'>
       >
       training_sessions: TableDefinition<
         TrainingSessionsRow,
@@ -335,6 +367,25 @@ export interface Database {
       unlock_achievements: { Args: { p_codes: string[] }; Returns: string[] }
       sync_daily_challenges: { Args: { p_day: string; p_rows: Json }; Returns: undefined }
       delete_my_account: { Args: Record<PropertyKey, never>; Returns: undefined }
+      new_word_candidates: {
+        Args: { p_limit?: number; p_levels?: CefrLevelDb[] | null }
+        Returns: Tables<'words'>[]
+      }
+      recovered_word_count: { Args: Record<PropertyKey, never>; Returns: number }
+      user_word_overview: {
+        Args: Record<PropertyKey, never>
+        Returns: Array<{
+          total: number
+          new_count: number
+          weak_count: number
+          activating: number
+          strong_count: number
+          active_count: number
+          due_now: number
+          avg_latency_ms: number | null
+          custom_count: number
+        }>
+      }
       word_latency_history: {
         Args: { p_word_id: string; p_limit?: number }
         Returns: Array<{
